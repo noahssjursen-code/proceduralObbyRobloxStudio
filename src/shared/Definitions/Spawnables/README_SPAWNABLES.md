@@ -1,16 +1,17 @@
 # Spawnable System
 
-A flexible, data-driven system for defining and building procedural objects in the world.
+A fully procedural, code-based system for defining and building objects in the world.
 
 ---
 
 ## **📋 Overview**
 
-The spawnable system supports **3 build modes**:
+The spawnable system supports **2 build modes**:
 
 1. **SimplePart** - Single procedural part (fast, common objects)
-2. **ModelReference** - Clone from ReplicatedStorage (pre-made assets)
-3. **CustomBuilder** - Programmatic multi-part structures (procedural complexity)
+2. **CustomBuilder** - Programmatic multi-part structures (procedural complexity)
+
+**Everything is code. No models in ReplicatedStorage.**
 
 ---
 
@@ -42,40 +43,7 @@ local StandardPlatform = {
 
 ---
 
-### **2. ModelReference** (Pre-Made Assets)
-Use for complex, hand-crafted models.
-
-```lua
-local WoodenBench = {
-    ID = "WoodenBench",
-    BuildMode = "ModelReference",
-    ModelPath = "Assets.Platforms.WoodenBench", -- Path in ReplicatedStorage
-    
-    CanCollide = true,
-    Anchored = true,
-    SpawnWeight = 10,
-}
-```
-
-**Setup:**
-1. Build your model in Roblox Studio
-2. Place it in `ReplicatedStorage > Assets > Platforms > WoodenBench`
-3. Reference using dot notation: `"Assets.Platforms.WoodenBench"`
-
-**When to use:**
-- Detailed models (benches, statues, decorations)
-- Objects that artists will create
-- Non-procedural content
-
-**Automatic Features:**
-- ✅ Clones the model
-- ✅ Scales all parts by `WorldScale`
-- ✅ Positions at spawn point
-- ✅ Works with Models OR single Parts
-
----
-
-### **3. CustomBuilder** (Procedural Code)
+### **2. CustomBuilder** (Procedural Code)
 Use for dynamic, code-generated structures.
 
 ```lua
@@ -113,9 +81,10 @@ local ProceduralLadder = {
 ```
 
 **When to use:**
-- Ladders, bridges, arches, towers
+- Ladders, bridges, arches, towers, pillars
 - Objects with repeating elements
 - Random variations (use `rng` parameter)
+- Complex multi-part structures
 
 **Function Signature:**
 ```lua
@@ -140,7 +109,7 @@ local MyPlatform = {
     DisplayName = "My Cool Platform",
     Category = "GrayNode",
     
-    BuildMode = "SimplePart", -- or "ModelReference" or "CustomBuilder"
+    BuildMode = "SimplePart", -- or "CustomBuilder"
     -- ... build mode specific fields ...
     
     CanCollide = true,
@@ -231,7 +200,6 @@ shared/Definitions/Spawnables/
   SpawnableBuilder.luau      ← Builds parts from definitions
   
   Examples/
-    ModelReferenceExample.luau  ← How to use pre-made models
     CustomBuilderExample.luau   ← How to build procedurally
   
   README_SPAWNABLES.md       ← This file
@@ -243,7 +211,7 @@ shared/Definitions/Spawnables/
 
 ### **Quick Start:**
 
-1. **Choose a build mode** (SimplePart, ModelReference, or CustomBuilder)
+1. **Choose a build mode** (SimplePart or CustomBuilder)
 2. **Create definition** in `GrayNodeSpawnables.luau`
 3. **Add to `GetAll()`** function
 4. **Test in-game**
@@ -314,11 +282,10 @@ SpawnWeight = 100 -- Now it's almost guaranteed
 1. **Always scale by `worldScale`** - Every size/position must multiply by it
 2. **Use `rng` for randomness** - Never use `math.random()` directly
 3. **Keep SimplePart most common** - It's fast and efficient
-4. **ModelReference for detail** - Use sparingly for special objects
-5. **CustomBuilder for complexity** - Procedural structures, repeated elements
-6. **Test at multiple scales** - What works at scale 1 might break at scale 30
-7. **Set reasonable weights** - StandardPlatform = 50, Rare obstacles = 5
-8. **Use MinScale wisely** - Small objects shouldn't spawn at large scales
+4. **CustomBuilder for complexity** - Procedural structures, repeated elements
+5. **Test at multiple scales** - What works at scale 1 might break at scale 30
+6. **Set reasonable weights** - StandardPlatform = 50, Rare obstacles = 5
+7. **Use MinScale wisely** - Small objects shouldn't spawn at large scales
 
 ---
 
@@ -336,4 +303,3 @@ All follow the same pattern: Define → Build → Spawn.
 ---
 
 Happy building! 🎮
-

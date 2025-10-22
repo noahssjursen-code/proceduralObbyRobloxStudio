@@ -11,6 +11,12 @@ local GrayNodeSpawnables = require(ReplicatedStorage.Shared.Definitions.Spawnabl
 local ObstacleSpawnables = require(ReplicatedStorage.Shared.Definitions.Spawnables.ObstacleSpawnables)
 local WallSpawnables = require(ReplicatedStorage.Shared.Definitions.Spawnables.WallSpawnables)
 local SpawnableBuilder = require(ReplicatedStorage.Shared.Definitions.Spawnables.SpawnableBuilder)
+local FillerBuilder = require(ReplicatedStorage.Shared.Definitions.Fillers.FillerBuilder)
+local ShortSegmentFillers = require(ReplicatedStorage.Shared.Definitions.Fillers.ShortSegmentFillers)
+local MediumSegmentFillers = require(ReplicatedStorage.Shared.Definitions.Fillers.MediumSegmentFillers)
+local LongSegmentFillers = require(ReplicatedStorage.Shared.Definitions.Fillers.LongSegmentFillers)
+local WideSegmentFillers = require(ReplicatedStorage.Shared.Definitions.Fillers.WideSegmentFillers)
+local NarrowSegmentFillers = require(ReplicatedStorage.Shared.Definitions.Fillers.NarrowSegmentFillers)
 local Config = require(ReplicatedStorage.Shared.Config)
 
 local WorldGenerationServer = {}
@@ -244,6 +250,93 @@ function Spawners.SpawnPillar(element: WorldGenerationService.WorldElement)
 	return pillar
 end
 
+-- Spawn a path segment (transparent bounding box) with filler content
+function Spawners.SpawnPathSegment(element: WorldGenerationService.WorldElement)
+	-- Create segment bounding box
+	local segment = Instance.new("Part")
+	segment.Name = "PathSegment_" .. (element.Properties.SegmentType or "Unknown") .. "_" .. (element.Properties.SegmentIndex or 0)
+	segment.Size = element.Scale -- Width x Height x Length
+	segment.Position = element.Position
+	segment.Anchored = true
+	segment.Material = element.Properties.Material or Enum.Material.ForceField
+	segment.Color = element.Properties.Color or Color3.fromRGB(150, 150, 255)
+	segment.Transparency = element.Properties.Transparency or 0.3
+	segment.CanCollide = false -- Segments are just bounding boxes, not walkable
+	
+	-- Apply rotation if specified
+	if element.Rotation then
+		segment.CFrame = CFrame.new(element.Position) * CFrame.Angles(
+			math.rad(element.Rotation.X),
+			math.rad(element.Rotation.Y),
+			math.rad(element.Rotation.Z)
+		)
+	end
+	
+	segment.Parent = WorldContainer
+	
+	-- Fill segment with content based on segment type
+	local segmentType = element.Properties.SegmentType
+	local filler = nil
+	
+	-- Create RNG from segment position (deterministic)
+	local posHash = element.Position.X + element.Position.Y * 1000 + element.Position.Z * 1000000
+	local rng = Random.new(math.floor(posHash))
+	
+	-- Select appropriate filler for segment type
+	if segmentType == "Short" then
+		filler = ShortSegmentFillers.SelectRandom(rng, CurrentWorldScale)
+	elseif segmentType == "Medium" then
+		filler = MediumSegmentFillers.SelectRandom(rng, CurrentWorldScale)
+	elseif segmentType == "Long" then
+		filler = LongSegmentFillers.SelectRandom(rng, CurrentWorldScale)
+	elseif segmentType == "Wide" then
+		filler = WideSegmentFillers.SelectRandom(rng, CurrentWorldScale)
+	elseif segmentType == "Narrow" then
+		filler = NarrowSegmentFillers.SelectRandom(rng, CurrentWorldScale)
+	end
+	
+	-- Build filler content inside segment
+	if filler then
+		FillerBuilder.Build(
+			filler,
+			element.Position,
+			element.Scale,
+			element.Rotation,
+			segmentType, -- Pass segment type for slot calculation
+			CurrentWorldScale,
+			rng,
+			WorldContainer
+		)
+	end
+	
+	return segment
+end
+
+-- Spawn a segment connector (gap filler between segments)
+function Spawners.SpawnSegmentConnector(element: WorldGenerationService.WorldElement)
+	local connector = Instance.new("Part")
+	connector.Name = "Connector_" .. (element.Properties.ConnectorType or "Unknown") .. "_" .. (element.Properties.SegmentIndex or 0)
+	connector.Size = element.Scale
+	connector.Position = element.Position
+	connector.Anchored = true
+	connector.Material = element.Properties.Material or Enum.Material.Neon
+	connector.Color = element.Properties.Color or Color3.fromRGB(200, 0, 255)
+	connector.Transparency = element.Properties.Transparency or 0.5
+	connector.CanCollide = false -- Connectors are visual guides
+	
+	-- Apply rotation if specified
+	if element.Rotation then
+		connector.CFrame = CFrame.new(element.Position) * CFrame.Angles(
+			math.rad(element.Rotation.X),
+			math.rad(element.Rotation.Y),
+			math.rad(element.Rotation.Z)
+		)
+	end
+	
+	connector.Parent = WorldContainer
+	return connector
+end
+
 --[[
 	Main spawner registry - maps element types to spawner functions
 ]]
@@ -294,6 +387,18 @@ local SpawnerRegistry = {
 	
 	["DecorationDot"] = function(element)
 		return Spawners.SpawnDot(element, "DecorationDot")
+	end,
+	
+	["PathSegment"] = function(element)
+		return Spawners.SpawnPathSegment(element)
+	end,
+	
+	["SegmentMarker"] = function(element)
+		return Spawners.SpawnDot(element, "SegmentMarker")
+	end,
+	
+	["SegmentConnector"] = function(element)
+		return Spawners.SpawnSegmentConnector(element)
 	end,
 	
 	-- Add more spawners here as needed

@@ -5,10 +5,11 @@ This document defines the **architectural pattern** for organizing code in this 
 ## Core Principles
 
 1. **Fully Procedural**: No manual workspace editing. Everything generated via code.
-2. **Service-Based Architecture**: Each major feature is a "service" with clear responsibilities.
-3. **Shared Definitions**: Common types, definitions, and utilities in ReplicatedStorage.
-4. **Server Authority**: Actual world generation happens server-side.
-5. **Module Scripts**: Everything is a module script (no loose scripts except entry points).
+2. **100% Code-Based**: No models in ReplicatedStorage. All parts created programmatically.
+3. **Service-Based Architecture**: Each major feature is a "service" with clear responsibilities.
+4. **Shared Definitions**: Common types, definitions, and utilities in ReplicatedStorage.
+5. **Server Authority**: Actual world generation happens server-side.
+6. **Module Scripts**: Everything is a module script (no loose scripts except entry points).
 
 ## File Structure Pattern
 

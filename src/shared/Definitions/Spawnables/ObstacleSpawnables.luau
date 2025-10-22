@@ -1,105 +1,116 @@
 --[[
 	Obstacle Spawnable Definitions (PinkObstacle, RedDanger, PurpleObstacle)
 	
-	Loads obstacle models from ReplicatedStorage/Assets/Spawnables/
-	
 	Pink = On-path obstacles
 	Red = External dangers
 	Purple = Dynamic obstacles
 ]]
 
 local SpawnableTypes = require(script.Parent.SpawnableTypes)
-local ModelLoader = require(script.Parent.ModelLoader)
 type SpawnableDefinition = SpawnableTypes.SpawnableDefinition
 
 local ObstacleSpawnables = {}
 
--- Caches
-local cachedPinkObstacles: { SpawnableDefinition }? = nil
-local cachedRedDangers: { SpawnableDefinition }? = nil
-local cachedPurpleObstacles: { SpawnableDefinition }? = nil
-local isInitialized = false
+--━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- PINK OBSTACLES (On-Path)
+--━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
---[[
-	Initialize all obstacle caches
-]]
-function ObstacleSpawnables.Initialize()
-	if isInitialized then
-		return
-	end
+local PinkObstacleDot = {
+	ID = "PinkObstacleDot",
+	DisplayName = "Pink Obstacle",
+	Category = "PinkObstacle",
 	
-	cachedPinkObstacles = ModelLoader.LoadPinkObstacleModels()
-	cachedRedDangers = ModelLoader.LoadRedDangerModels()
-	cachedPurpleObstacles = ModelLoader.LoadPurpleObstacleModels()
-	isInitialized = true
-end
+	BuildMode = "SimplePart",
+	Shape = Enum.PartType.Ball,
+	Size = Vector3.new(1, 1, 1),
+	Color = Color3.fromRGB(255, 100, 200),
+	Material = Enum.Material.Neon,
+	
+	CanCollide = true,
+	Anchored = true,
+	Massless = true,
+	
+	SpawnWeight = 100,
+}
 
---[[
-	Get all Pink Obstacles (on-path)
-]]
 function ObstacleSpawnables.GetPinkObstacles(): { SpawnableDefinition }
-	if not isInitialized then
-		ObstacleSpawnables.Initialize()
-	end
-	return cachedPinkObstacles or {}
+	return { PinkObstacleDot }
 end
 
---[[
-	Get all Red Dangers (external)
-]]
-function ObstacleSpawnables.GetRedDangers(): { SpawnableDefinition }
-	if not isInitialized then
-		ObstacleSpawnables.Initialize()
-	end
-	return cachedRedDangers or {}
-end
-
---[[
-	Get all Purple Dynamic Obstacles
-]]
-function ObstacleSpawnables.GetPurpleObstacles(): { SpawnableDefinition }
-	if not isInitialized then
-		ObstacleSpawnables.Initialize()
-	end
-	return cachedPurpleObstacles or {}
-end
-
---[[
-	Select random Pink Obstacle
-]]
 function ObstacleSpawnables.SelectRandomPink(rng: Random, currentScale: number): SpawnableDefinition?
 	local obstacles = ObstacleSpawnables.GetPinkObstacles()
 	if #obstacles == 0 then
 		return nil
 	end
-	
-	-- Simple random selection (can add weighted later)
 	return obstacles[rng:NextInteger(1, #obstacles)]
 end
 
---[[
-	Select random Red Danger
-]]
+--━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- RED DANGERS (External)
+--━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+local RedDangerDot = {
+	ID = "RedDangerDot",
+	DisplayName = "Red Danger",
+	Category = "RedDanger",
+	
+	BuildMode = "SimplePart",
+	Shape = Enum.PartType.Ball,
+	Size = Vector3.new(1, 1, 1),
+	Color = Color3.fromRGB(255, 0, 0),
+	Material = Enum.Material.Neon,
+	
+	CanCollide = true,
+	Anchored = true,
+	Massless = true,
+	
+	SpawnWeight = 100,
+}
+
+function ObstacleSpawnables.GetRedDangers(): { SpawnableDefinition }
+	return { RedDangerDot }
+end
+
 function ObstacleSpawnables.SelectRandomRed(rng: Random, currentScale: number): SpawnableDefinition?
 	local dangers = ObstacleSpawnables.GetRedDangers()
 	if #dangers == 0 then
 		return nil
 	end
-	
 	return dangers[rng:NextInteger(1, #dangers)]
 end
 
---[[
-	Select random Purple Obstacle
-]]
+--━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- PURPLE OBSTACLES (Dynamic)
+--━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+local PurpleObstacleDot = {
+	ID = "PurpleObstacleDot",
+	DisplayName = "Purple Dynamic Obstacle",
+	Category = "PurpleObstacle",
+	
+	BuildMode = "SimplePart",
+	Shape = Enum.PartType.Ball,
+	Size = Vector3.new(1, 1, 1),
+	Color = Color3.fromRGB(180, 0, 200),
+	Material = Enum.Material.Neon,
+	
+	CanCollide = true,
+	Anchored = true,
+	Massless = true,
+	
+	SpawnWeight = 100,
+}
+
+function ObstacleSpawnables.GetPurpleObstacles(): { SpawnableDefinition }
+	return { PurpleObstacleDot }
+end
+
 function ObstacleSpawnables.SelectRandomPurple(rng: Random, currentScale: number): SpawnableDefinition?
 	local obstacles = ObstacleSpawnables.GetPurpleObstacles()
 	if #obstacles == 0 then
 		return nil
 	end
-	
 	return obstacles[rng:NextInteger(1, #obstacles)]
 end
 
 return ObstacleSpawnables
-

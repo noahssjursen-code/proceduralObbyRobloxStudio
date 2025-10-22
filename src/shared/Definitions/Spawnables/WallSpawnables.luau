@@ -1,44 +1,55 @@
 --[[
 	Wall Spawnables
 	
-	Manages spawnable definitions for orange walls (barriers, fences, etc.)
+	Orange walls (barriers, fences, etc.)
 ]]
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ModelLoader = require(script.Parent.ModelLoader)
+local SpawnableTypes = require(script.Parent.SpawnableTypes)
+type SpawnableDefinition = SpawnableTypes.SpawnableDefinition
 
 local WallSpawnables = {}
 
--- Cache loaded models (loaded once at server startup)
-local cachedWalls = nil
+--━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- DEFINITIONS
+--━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
--- Initialize: Load all wall models once at startup
-function WallSpawnables.Initialize()
-	if cachedWalls then
-		return -- Already loaded
-	end
+local WallDot = {
+	ID = "WallDot",
+	DisplayName = "Wall",
+	Category = "OrangeWall",
 	
-	cachedWalls = ModelLoader.LoadOrangeWallModels()
+	BuildMode = "SimplePart",
+	Shape = Enum.PartType.Ball,
+	Size = Vector3.new(1, 1, 1),
+	Color = Color3.fromRGB(255, 150, 0),
+	Material = Enum.Material.SmoothPlastic,
+	
+	CanCollide = true,
+	Anchored = true,
+	Massless = true,
+	
+	SpawnWeight = 100,
+}
+
+--━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- REGISTRY
+--━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+function WallSpawnables.GetAll(): { SpawnableDefinition }
+	return { WallDot }
 end
 
--- Get all wall spawnables
-function WallSpawnables.GetAll()
-	if not cachedWalls then
-		WallSpawnables.Initialize()
-	end
-	
-	return cachedWalls
-end
+--━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- SELECTION
+--━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
--- Select a random wall spawnable
-function WallSpawnables.SelectRandom(rng: Random, currentWorldScale: number)
+function WallSpawnables.SelectRandom(rng: Random, currentWorldScale: number): SpawnableDefinition?
 	local walls = WallSpawnables.GetAll()
 	
 	if #walls == 0 then
-		return nil -- Fallback to placeholder
+		return nil
 	end
 	
-	-- Filter by scale constraints
 	local validWalls = {}
 	for _, wall in walls do
 		local minScale = wall.MinScale or 0
@@ -49,10 +60,9 @@ function WallSpawnables.SelectRandom(rng: Random, currentWorldScale: number)
 	end
 	
 	if #validWalls == 0 then
-		return nil -- No walls valid at this scale
+		return nil
 	end
 	
-	-- Weighted random selection
 	local totalWeight = 0
 	for _, wall in validWalls do
 		totalWeight += wall.SpawnWeight or 10
@@ -68,8 +78,7 @@ function WallSpawnables.SelectRandom(rng: Random, currentWorldScale: number)
 		end
 	end
 	
-	return validWalls[1] -- Fallback
+	return validWalls[1]
 end
 
 return WallSpawnables
-

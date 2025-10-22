@@ -76,80 +76,7 @@ function SpawnableBuilder.BuildSimplePart(
 end
 
 --━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
--- BUILD MODE 2: Model Reference
---━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
---[[
-	Clones a pre-made model from ReplicatedStorage.
-	ModelPath format: "Assets.Platforms.WoodenBench"
-]]
-function SpawnableBuilder.BuildFromModel(
-	definition: SpawnableDefinition,
-	position: Vector3,
-	worldScale: number,
-	forward: Vector3?
-): Instance
-	local modelPath = definition.ModelPath
-	if not modelPath then
-		error(string.format("[SpawnableBuilder] ModelPath required for ModelReference mode: %s", definition.ID))
-	end
-	
-	-- Navigate to the model using dot notation
-	local pathParts = string.split(modelPath, ".")
-	local current = ReplicatedStorage
-	
-	for _, part in pathParts do
-		current = current:FindFirstChild(part)
-		if not current then
-			error(string.format("[SpawnableBuilder] Model not found: %s", modelPath))
-		end
-	end
-	
-	-- Clone the model
-	local model = current:Clone()
-	model.Name = definition.ID
-	
-	-- Calculate final scale factor (worldScale * modelScale)
-	local modelScaleFactor = definition.ModelScale or 1.0
-	local finalScale = worldScale * modelScaleFactor
-	
-	-- Calculate orientation CFrame
-	local cframe
-	if forward and forward.Magnitude > 0 then
-		-- Orient model to face the forward direction
-		-- Models are built facing -Z by default in Roblox
-		cframe = CFrame.lookAt(position, position + forward)
-	else
-		-- No forward direction specified, just position
-		cframe = CFrame.new(position)
-	end
-	
-	-- Scale the model efficiently
-	if model:IsA("Model") then
-		-- Verify PrimaryPart is set
-		if not model.PrimaryPart then
-			error(string.format(
-				"[SpawnableBuilder] Model '%s' has no PrimaryPart set! Right-click model → Properties → PrimaryPart",
-				definition.ID
-			))
-		end
-		
-		-- Use Roblox's built-in ScaleTo (much faster than manual scaling!)
-		model:ScaleTo(finalScale)
-		
-		-- Position and orient the model
-		model:PivotTo(cframe)
-	elseif model:IsA("BasePart") then
-		-- Single part - scale directly
-		model.Size = model.Size * finalScale
-		model.CFrame = cframe
-	end
-	
-	return model
-end
-
---━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
--- BUILD MODE 3: Custom Builder
+-- BUILD MODE 2: Custom Builder
 --━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 --[[
@@ -225,8 +152,6 @@ function SpawnableBuilder.Build(
 	
 	if definition.BuildMode == "SimplePart" then
 		instance = SpawnableBuilder.BuildSimplePart(definition, position, worldScale, forward)
-	elseif definition.BuildMode == "ModelReference" then
-		instance = SpawnableBuilder.BuildFromModel(definition, position, worldScale, forward)
 	elseif definition.BuildMode == "CustomBuilder" then
 		instance = SpawnableBuilder.BuildFromFunction(definition, position, worldScale, rng)
 	else

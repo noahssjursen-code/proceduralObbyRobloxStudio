@@ -5,7 +5,7 @@
 	These are pure data - no building logic here.
 ]]
 
-export type BuildMode = "SimplePart" | "ModelReference" | "CustomBuilder"
+export type BuildMode = "SimplePart" | "CustomBuilder"
 
 export type SpawnableDefinition = {
 	-- Identity
@@ -24,10 +24,6 @@ export type SpawnableDefinition = {
 	Color: Color3?,
 	Material: Enum.Material?,
 	Transparency: number?,
-	
-	-- For "ModelReference" mode - clone from ReplicatedStorage
-	ModelPath: string?, -- e.g. "Assets.Platforms.WoodenBench"
-	ModelScale: number?, -- Scale factor for model (default 1.0) - use to normalize different sized models
 	
 	-- For "CustomBuilder" mode - call a custom function
 	BuilderFunction: ((position: Vector3, worldScale: number, rng: Random) -> Instance)?,

@@ -1,80 +1,52 @@
 --[[
 	Gray Node Spawnable Definitions
 	
-	Loads walkable platform models from ReplicatedStorage/Assets/Spawnables/GrayNode.
-	
-	If no models are found, gray nodes will use simple placeholder dots instead.
-	Drop models in the folder to replace the placeholders!
+	Walkable platform definitions (purely procedural - no models).
 ]]
 
 local SpawnableTypes = require(script.Parent.SpawnableTypes)
-local ModelLoader = require(script.Parent.ModelLoader)
 type SpawnableDefinition = SpawnableTypes.SpawnableDefinition
 
 local GrayNodeSpawnables = {}
 
 --━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
--- CACHE
+-- DEFINITIONS
 --━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
--- Cache loaded models (only scan once!)
-local cachedSpawnables: { SpawnableDefinition }? = nil
-local isInitialized = false
-
---━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
--- INITIALIZATION
---━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
---[[
-	Initialize the cache at startup (call this ONCE before world generation)
-]]
-function GrayNodeSpawnables.Initialize()
-	if isInitialized then
-		return
-	end
+GrayNodeSpawnables.StandardPlatform = {
+	ID = "StandardPlatform",
+	DisplayName = "Standard Platform",
+	Category = "GrayNode",
 	
-	-- Load models once
-	cachedSpawnables = ModelLoader.LoadGrayNodeModels()
-	isInitialized = true
+	BuildMode = "SimplePart",
+	Shape = Enum.PartType.Ball,
+	Size = Vector3.new(1, 1, 1),
+	Color = Color3.fromRGB(150, 150, 150),
+	Material = Enum.Material.SmoothPlastic,
 	
-	if #cachedSpawnables > 0 then
-		print(string.format("[GrayNodeSpawnables] Loaded %d model(s) from Assets/Spawnables/GrayNode", #cachedSpawnables))
-	else
-		print("[GrayNodeSpawnables] No models found - using placeholder dots")
-	end
-end
+	CanCollide = true,
+	Anchored = true,
+	Massless = true,
+	
+	SpawnWeight = 100,
+}
 
 --━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
--- UTILITIES
+-- REGISTRY
 --━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
---[[
-	Get all available spawnable models.
-	
-	CACHED: Returns the pre-loaded models (Initialize() must be called first!)
-]]
 function GrayNodeSpawnables.GetAll(): { SpawnableDefinition }
-	-- Lazy initialize if not already done
-	if not isInitialized then
-		GrayNodeSpawnables.Initialize()
-	end
-	
-	return cachedSpawnables or {}
+	return {
+		GrayNodeSpawnables.StandardPlatform,
+	}
 end
 
---[[
-	Select a random spawnable based on weights and scale constraints.
-	
-	Returns nil if no models are available (will use placeholder dots).
-]]
+--━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- SELECTION
+--━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 function GrayNodeSpawnables.SelectRandom(rng: Random, currentScale: number): SpawnableDefinition?
 	local allSpawnables = GrayNodeSpawnables.GetAll()
-	
-	-- No models available - return nil (will use placeholder)
-	if #allSpawnables == 0 then
-		return nil
-	end
-	
 	local validSpawnables = {}
 	local totalWeight = 0
 	
@@ -89,7 +61,6 @@ function GrayNodeSpawnables.SelectRandom(rng: Random, currentScale: number): Spa
 		end
 	end
 	
-	-- No valid spawnables for this scale - return nil
 	if #validSpawnables == 0 then
 		return nil
 	end
@@ -105,9 +76,7 @@ function GrayNodeSpawnables.SelectRandom(rng: Random, currentScale: number): Spa
 		end
 	end
 	
-	-- Fallback to first valid spawnable
 	return validSpawnables[1]
 end
 
 return GrayNodeSpawnables
-

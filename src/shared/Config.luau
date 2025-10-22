@@ -11,15 +11,16 @@ local Config = {}
 -- WORLD SCALE
 -- ========================================
 -- Master scale multiplier - change this to scale EVERYTHING
--- 1.0 = Current scale (good for testing)
--- 5.0 = 5x larger (truly colossal)
--- 10.0 = 10x larger (epic scale)
-Config.WorldScale = 1.0
+-- 10.0 = Player comfortable scale (baseline) ← CURRENT
+-- 5.0 = Half size (smaller, tighter gameplay)
+-- 20.0 = 2x bigger (more spacious)
+-- 30.0 = 3x bigger (truly colossal)
+Config.WorldScale = 10.0
 
 -- Player scale reference (WorldScale at which obstacles are built at 1:1 size)
--- At WorldScale=30, a 10-stud obstacle model spawns at 10 studs
--- At other scales, obstacles scale proportionally (WorldScale/30)
-Config.PlayerScaleReference = 30
+-- At WorldScale=10, a 6-stud jump is comfortable for players
+-- At WorldScale=30, everything is 3x bigger (epic scale)
+Config.PlayerScaleReference = 10
 
 -- ========================================
 -- PERFORMANCE
@@ -41,7 +42,7 @@ Config.WorldGeneration = {
 	SpawnPlatformSize = 40,
 	
 	-- Checkpoints
-	CheckpointCount = 20,
+	CheckpointCount = 4, -- Testing: reduced from 20
 	CheckpointSize = 8,
 	SpawnCheckpointSize = 4, -- Small spawn (at 30x = 120 studs, reasonable)
 	CheckpointMinDistance = 160, -- 2x original (was 80)
@@ -50,18 +51,41 @@ Config.WorldGeneration = {
 	CheckpointHeightIncreaseMin = 5, -- Minimum height gain per checkpoint
 	CheckpointHeightIncreaseMax = 15, -- Maximum height gain per checkpoint
 	
-	-- Paths (3-TIER hierarchical system)
-	-- Tier 1: Blue Strategic Nodes (major waypoints, large challenges)
-	BlueNodeSpacing = 1.0, -- Far apart (major sections)
-	BlueNodeSize = 5,
+	-- Path Segments (modular platform pieces like toy railway)
+	PathSegments = {
+		Short = {Length = 10, Width = 8, Height = 2},
+		Medium = {Length = 20, Width = 8, Height = 2},
+		Long = {Length = 40, Width = 8, Height = 2},
+		Wide = {Length = 15, Width = 12, Height = 2},
+		Narrow = {Length = 12, Width = 5, Height = 2},
+	},
+	SegmentTurnAngleMin = -60, -- Degrees
+	SegmentTurnAngleMax = 60,
+	SegmentHeightVariation = 3, -- Height offset between segments
 	
-	-- Tier 2: Green Control Nodes (curve control between blue nodes)
-	GreenNodeSpacing = 0.25, -- Medium spacing (curve definition)
-	GreenNodeSize = 2,
+	-- Connectors (between segments)
+	ConnectorMaxFlatHeight = 2, -- Below this = flat connector (purple)
+	ConnectorLadderHeight = 8, -- Above flat, below this = ladder (brown)
+	ConnectorStairHeight = 20, -- Above ladder = stairs (brown)
 	
-	-- Tier 3: Gray Walkable Nodes (dense surface for walking/obstacles)
-	GrayNodeSpacing = 0.5, -- Close together (actual walkable surface)
-	GrayNodeSize = 0.4,
+	-- Attribute Slots (for modular obstacle system)
+	AttributeSlots = {
+		SlotMargin = 0.15, -- 15% margin between slots (as % of slot length)
+		
+		-- Default slot counts per segment type
+		DefaultSlotCounts = {
+			Short = 2,   -- Short segments have 2 attribute slots
+			Medium = 4,  -- Medium segments have 4 attribute slots
+			Long = 6,    -- Long segments have 6 attribute slots
+			Wide = 3,    -- Wide segments have 3 attribute slots
+			Narrow = 5,  -- Narrow segments have 5 attribute slots (more frequent, smaller)
+		},
+		
+		-- Visual debug
+		ShowSlotBoxes = true, -- Show transparent boxes for each slot
+		SlotBoxTransparency = 0.7, -- How transparent the slot boxes are
+		SlotBoxColor = Color3.fromRGB(255, 200, 0), -- Yellow/orange for visibility
+	},
 	
 	-- Walls
 	WallChance = 0.3, -- 30% of paths get walls
@@ -160,12 +184,50 @@ function Config.GetScaledWorldConfig(): {[string]: any}
 		CheckpointHeightIncreaseMin = wg.CheckpointHeightIncreaseMin * scale,
 		CheckpointHeightIncreaseMax = wg.CheckpointHeightIncreaseMax * scale,
 		
-		BlueNodeSpacing = wg.BlueNodeSpacing, -- Don't scale spacing ratios
-		BlueNodeSize = wg.BlueNodeSize * scale,
-		GreenNodeSpacing = wg.GreenNodeSpacing,
-		GreenNodeSize = wg.GreenNodeSize * scale,
-		GrayNodeSpacing = wg.GrayNodeSpacing * scale, -- Do scale absolute spacing
-		GrayNodeSize = wg.GrayNodeSize * scale,
+		-- Scale segment dimensions
+		PathSegments = {
+			Short = {
+				Length = wg.PathSegments.Short.Length * scale,
+				Width = wg.PathSegments.Short.Width * scale,
+				Height = wg.PathSegments.Short.Height * scale,
+			},
+			Medium = {
+				Length = wg.PathSegments.Medium.Length * scale,
+				Width = wg.PathSegments.Medium.Width * scale,
+				Height = wg.PathSegments.Medium.Height * scale,
+			},
+			Long = {
+				Length = wg.PathSegments.Long.Length * scale,
+				Width = wg.PathSegments.Long.Width * scale,
+				Height = wg.PathSegments.Long.Height * scale,
+			},
+			Wide = {
+				Length = wg.PathSegments.Wide.Length * scale,
+				Width = wg.PathSegments.Wide.Width * scale,
+				Height = wg.PathSegments.Wide.Height * scale,
+			},
+			Narrow = {
+				Length = wg.PathSegments.Narrow.Length * scale,
+				Width = wg.PathSegments.Narrow.Width * scale,
+				Height = wg.PathSegments.Narrow.Height * scale,
+			},
+		},
+		SegmentTurnAngleMin = wg.SegmentTurnAngleMin,
+		SegmentTurnAngleMax = wg.SegmentTurnAngleMax,
+		SegmentHeightVariation = wg.SegmentHeightVariation * scale,
+		
+		ConnectorMaxFlatHeight = wg.ConnectorMaxFlatHeight * scale,
+		ConnectorLadderHeight = wg.ConnectorLadderHeight * scale,
+		ConnectorStairHeight = wg.ConnectorStairHeight * scale,
+		
+		-- Attribute slots (don't scale counts, margins, or visual settings)
+		AttributeSlots = {
+			SlotMargin = wg.AttributeSlots.SlotMargin,
+			DefaultSlotCounts = wg.AttributeSlots.DefaultSlotCounts,
+			ShowSlotBoxes = wg.AttributeSlots.ShowSlotBoxes,
+			SlotBoxTransparency = wg.AttributeSlots.SlotBoxTransparency,
+			SlotBoxColor = wg.AttributeSlots.SlotBoxColor,
+		},
 		
 		WallChance = wg.WallChance, -- Don't scale percentages
 		WallOffset = wg.WallOffset * scale,
@@ -202,4 +264,3 @@ function Config.GetScaledWorldConfig(): {[string]: any}
 end
 
 return Config
-

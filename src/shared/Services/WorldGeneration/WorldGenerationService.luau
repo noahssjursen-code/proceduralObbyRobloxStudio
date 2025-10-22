@@ -75,19 +75,15 @@ function WorldGenerationService.GenerateWorldLayout(seed: number): WorldLayout
 	-- Store spawn position from first checkpoint for player spawning
 	SpawnPosition = checkpointElements[1].Position
 	
-	-- Generate Paths (3-Tier: Blue → Green → Gray)
+	-- Generate Path Segments (modular platform pieces)
 	local pathConfig = {
-		BlueNodeSpacing = cfg.BlueNodeSpacing,
-		BlueNodeSize = cfg.BlueNodeSize,
-		BlueNodeColor = Config.Colors.BlueNode,
-		
-		GreenNodeSpacing = cfg.GreenNodeSpacing,
-		GreenNodeSize = cfg.GreenNodeSize,
-		GreenNodeColor = Config.Colors.GreenNode,
-		
-		GrayNodeSpacing = cfg.GrayNodeSpacing,
-		GrayNodeSize = cfg.GrayNodeSize,
-		GrayNodeColor = Config.Colors.GrayNode,
+		PathSegments = cfg.PathSegments,
+		SegmentTurnAngleMin = cfg.SegmentTurnAngleMin,
+		SegmentTurnAngleMax = cfg.SegmentTurnAngleMax,
+		SegmentHeightVariation = cfg.SegmentHeightVariation,
+		ConnectorMaxFlatHeight = cfg.ConnectorMaxFlatHeight,
+		ConnectorLadderHeight = cfg.ConnectorLadderHeight,
+		ConnectorStairHeight = cfg.ConnectorStairHeight,
 	}
 	local pathElements = PathGenerator.Generate(checkpointElements, pathConfig, rng)
 	for _, element in pathElements do

@@ -16,21 +16,15 @@ if currentSeed then
 	print(string.format("[Server] World will be generated with seed: %d", currentSeed.Value))
 end
 
--- Preload spawnable models (before world generation!)
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local GrayNodeSpawnables = require(ReplicatedStorage.Shared.Definitions.Spawnables.GrayNodeSpawnables)
-local ObstacleSpawnables = require(ReplicatedStorage.Shared.Definitions.Spawnables.ObstacleSpawnables)
-local WallSpawnables = require(ReplicatedStorage.Shared.Definitions.Spawnables.WallSpawnables)
-
-print("[Server] Preloading spawnable models...")
-GrayNodeSpawnables.Initialize()
-ObstacleSpawnables.Initialize()
-WallSpawnables.Initialize()
-print("[Server] Spawnable models ready!")
+-- No model preloading needed - everything is procedural code!
 
 -- Initialize World Generation
 local WorldGenerationServer = require(script.Services.WorldGeneration.WorldGenerationServer)
 local spawnPosition = WorldGenerationServer.Initialize(currentSeed.Value)
+
+-- Initialize Damage System (AFTER world generation)
+local DamageManagerServer = require(script.Services.DamageManager.DamageManagerServer)
+DamageManagerServer.Initialize()
 
 -- Initialize Player Service (handles spawning)
 local PlayerServiceServer = require(script.Services.Player.PlayerServiceServer)
