@@ -50,9 +50,9 @@ function MovingPlatforms.Build(
 	
 	-- Create platforms with varied movement patterns
 	for i = 1, platformCount do
-		-- Position along length
+		-- Position along length - start closer to start, end closer to end
 		local t = (i - 1) / (platformCount - 1)  -- 0 to 1
-		local forwardOffset = (t - 0.5) * length * 0.9
+		local forwardOffset = (t - 0.5) * length  -- Use full length, no 0.9 reduction
 		
 		-- Randomly choose movement type for this platform
 		local movementType = rng:NextInteger(1, 3)

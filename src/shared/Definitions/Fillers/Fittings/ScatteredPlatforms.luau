@@ -34,7 +34,7 @@ function ScatteredPlatforms.Build(
 	
 	-- Player-scale constants
 	local platformSize = 4  -- Size of each platform (player-scale)
-	local maxJumpDistance = 6  -- Maximum comfortable jump (player-scale)
+	local maxJumpDistance = 5  -- Maximum comfortable jump (player-scale)
 	
 	-- Helper function for world positioning
 	local function getWorldPosition(lateralOffset: number, verticalOffset: number, forwardOffset: number): CFrame
@@ -43,8 +43,8 @@ function ScatteredPlatforms.Build(
 	end
 	
 	-- Calculate how many rows of platforms we need along the length
-	local rowSpacing = maxJumpDistance * 0.7  -- Space rows closer than max jump
-	local rowCount = math.max(3, math.floor(length / rowSpacing))
+	local rowSpacing = maxJumpDistance * 0.6  -- Space rows much closer than max jump
+	local rowCount = math.max(4, math.floor(length / rowSpacing))  -- At least 4 rows
 	
 	-- Platforms per row (2-3 depending on width)
 	local platformsPerRow = (width > 80) and 3 or 2  -- More platforms if wider segment
@@ -75,8 +75,9 @@ function ScatteredPlatforms.Build(
 		end
 		
 		-- Randomly skip one platform per row (but always keep start and end rows full)
+		-- Also ensure we don't skip too many platforms in a row
 		local skipIndex = nil
-		if row ~= 1 and row ~= rowCount then
+		if row ~= 1 and row ~= rowCount and rng:NextNumber(0, 1) < 0.3 then  -- Only 30% chance to skip
 			skipIndex = rng:NextInteger(1, platformsPerRow)
 		end
 		

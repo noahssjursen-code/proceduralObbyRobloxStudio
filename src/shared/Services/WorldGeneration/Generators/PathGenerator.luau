@@ -111,8 +111,9 @@ local function PickSegmentsForDistance(targetDistance: number, segmentTypes: any
 		-- Check if adding this segment overshoots too much
 		local remaining = targetDistance - currentDistance
 		
-		if remaining < segmentLength * 0.5 and #segments > 0 then
-			-- Too close, we're done
+		-- Only stop if we're extremely close (less than 5% of target distance)
+		if remaining < targetDistance * 0.05 and #segments > 0 then
+			-- Extremely close, we're done
 			break
 		end
 		
@@ -192,6 +193,26 @@ local function GenerateSegmentsBetween(
 		local forwardOffset = CFrame.Angles(0, currentYaw, 0) * Vector3.new(0, 0, halfLength)
 		local segmentCenter = currentPos + forwardOffset + Vector3.new(0, currentHeight - startPos.Y, 0)
 		
+		-- For the first segment, ensure it starts exactly at the checkpoint
+		if i == 1 then
+			-- Position first segment so its START edge aligns with checkpoint
+			segmentCenter = startPos + Vector3.new(0, currentHeight - startPos.Y, 0) + forwardOffset
+		end
+		
+		-- For the last segment, ensure it ends exactly at the target checkpoint
+		if i == #segmentNames then
+			-- Calculate how much we need to adjust to reach the end checkpoint
+			local remainingDistance = (endPos - currentPos).Magnitude
+			local segmentLength = segmentDef.Length
+			
+			-- If we're close but not exact, adjust the segment position
+			if remainingDistance > 0.1 and remainingDistance < segmentLength then
+				-- Adjust the segment center to make it end at the target
+				local adjustment = (endPos - currentPos) * 0.5  -- Half the remaining distance
+				segmentCenter = segmentCenter + adjustment
+			end
+		end
+		
 		-- Create segment element (transparent bounding box)
 		table.insert(elements, {
 			Type = "PathSegment",
@@ -244,6 +265,13 @@ local function GenerateSegmentsBetween(
 		local fullForwardOffset = CFrame.Angles(0, currentYaw, 0) * Vector3.new(0, 0, segmentDef.Length)
 		currentPos = currentPos + fullForwardOffset
 		
+		-- For the last segment, ensure it ends exactly at the target checkpoint
+		if i == #segmentNames then
+			-- Adjust currentPos to align with end checkpoint
+			local toEnd = (endPos - currentPos)
+			currentPos = endPos
+		end
+		
 		-- Add END marker (red sphere at segment end)
 		local endMarkerPos = currentPos + Vector3.new(0, currentHeight - startPos.Y, 0)
 		table.insert(elements, {
@@ -283,23 +311,40 @@ function PathGenerator.Generate(checkpointElements: {any}, config: any, rng: Ran
 	
 	local segmentTypes = config.PathSegments
 	
+	-- Find checkpoint start/end nodes
+	local checkpointStarts = {}
+	local checkpointEnds = {}
+	
+	for _, element in ipairs(checkpointElements) do
+		if element.Type == "CheckpointStart" then
+			checkpointStarts[element.Properties.CheckpointNumber] = element.Position
+		elseif element.Type == "CheckpointEnd" then
+			checkpointEnds[element.Properties.CheckpointNumber] = element.Position
+		end
+	end
+	
 	-- Generate segments between each checkpoint pair
 	for i = 1, #checkpointElements - 1 do
-		local startPos = checkpointElements[i].Position
-		local endPos = checkpointElements[i + 1].Position
+		-- Find the end node of current checkpoint and start node of next checkpoint
+		local startPos = checkpointEnds[i] -- End of current checkpoint
+		local endPos = checkpointStarts[i + 1] -- Start of next checkpoint
 		
-		local segmentElements = GenerateSegmentsBetween(
-			startPos,
-			endPos,
-			i,
-			segmentTypes,
-			config,
-			rng
-		)
-		
-		for _, element in ipairs(segmentElements) do
-			table.insert(elements, element)
-			totalSegments = totalSegments + 1
+		if startPos and endPos then
+			local segmentElements = GenerateSegmentsBetween(
+				startPos,
+				endPos,
+				i,
+				segmentTypes,
+				config,
+				rng
+			)
+			
+			for _, element in ipairs(segmentElements) do
+				table.insert(elements, element)
+				totalSegments = totalSegments + 1
+			end
+		else
+			warn(string.format("[PathGenerator] Missing checkpoint nodes for path %d", i))
 		end
 	end
 	

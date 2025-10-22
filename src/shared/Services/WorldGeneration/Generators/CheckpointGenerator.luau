@@ -25,7 +25,36 @@ function CheckpointGenerator.Generate(rng: Random, spawnPos: Vector3, config: an
 	local spreadAngle = config.SpreadAngle
 	local color = config.Color
 	
-	-- First checkpoint IS the spawn (checkpoint 1) - slightly larger than regular checkpoints
+	-- First checkpoint IS the spawn (checkpoint 1) - create start and end nodes
+	-- Start node (where paths connect TO this checkpoint)
+	table.insert(elements, {
+		Type = "CheckpointStart",
+		Position = spawnPos,
+		Scale = Vector3.new(2, 2, 2),
+		Properties = {
+			Material = Enum.Material.Neon,
+			Color = Color3.fromRGB(0, 255, 0), -- Green for start
+			CheckpointNumber = 1,
+			Brightness = 1,
+			IsSpawn = true,
+		}
+	})
+	
+	-- End node (where paths connect FROM this checkpoint)
+	table.insert(elements, {
+		Type = "CheckpointEnd",
+		Position = spawnPos,
+		Scale = Vector3.new(2, 2, 2),
+		Properties = {
+			Material = Enum.Material.Neon,
+			Color = Color3.fromRGB(255, 0, 0), -- Red for end
+			CheckpointNumber = 1,
+			Brightness = 1,
+			IsSpawn = true,
+		}
+	})
+	
+	-- Main checkpoint orb (visual marker)
 	table.insert(elements, {
 		Type = "CheckpointOrb",
 		Position = spawnPos,
@@ -74,7 +103,33 @@ function CheckpointGenerator.Generate(rng: Random, spawnPos: Vector3, config: an
 		-- Update direction for next iteration
 		currentDirection = newDirection
 		
-		-- Create checkpoint element
+		-- Create start node (where paths connect TO this checkpoint)
+		table.insert(elements, {
+			Type = "CheckpointStart",
+			Position = currentPosition,
+			Scale = Vector3.new(2, 2, 2),
+			Properties = {
+				Material = Enum.Material.Neon,
+				Color = Color3.fromRGB(0, 255, 0), -- Green for start
+				CheckpointNumber = i,
+				Brightness = 1,
+			}
+		})
+		
+		-- Create end node (where paths connect FROM this checkpoint)
+		table.insert(elements, {
+			Type = "CheckpointEnd",
+			Position = currentPosition,
+			Scale = Vector3.new(2, 2, 2),
+			Properties = {
+				Material = Enum.Material.Neon,
+				Color = Color3.fromRGB(255, 0, 0), -- Red for end
+				CheckpointNumber = i,
+				Brightness = 1,
+			}
+		})
+		
+		-- Main checkpoint orb (visual marker)
 		table.insert(elements, {
 			Type = "CheckpointOrb",
 			Position = currentPosition,

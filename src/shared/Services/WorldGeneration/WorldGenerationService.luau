@@ -188,14 +188,23 @@ function WorldGenerationService.GenerateWorldLayout(seed: number): WorldLayout
 		end
 	end
 	
-	-- Filter out gray nodes at obstacle positions
+	-- Also skip checkpoint node positions (they have their own visual markers)
+	local checkpointPositions = {}
+	for _, element in elements do
+		if element.Type == "CheckpointStart" or element.Type == "CheckpointEnd" or element.Type == "CheckpointOrb" then
+			local key = string.format("%.2f,%.2f,%.2f", element.Position.X, element.Position.Y, element.Position.Z)
+			checkpointPositions[key] = true
+		end
+	end
+	
+	-- Filter out gray nodes at obstacle and checkpoint positions
 	local filteredElements = {}
 	local removedCount = 0
 	for _, element in elements do
 		local key = string.format("%.2f,%.2f,%.2f", element.Position.X, element.Position.Y, element.Position.Z)
-		if element.Type == "GrayNode" and obstaclePositions[key] then
+		if element.Type == "GrayNode" and (obstaclePositions[key] or checkpointPositions[key]) then
 			removedCount += 1
-			-- Skip this gray node - there's an obstacle here
+			-- Skip this gray node - there's an obstacle or checkpoint here
 		else
 			table.insert(filteredElements, element)
 		end

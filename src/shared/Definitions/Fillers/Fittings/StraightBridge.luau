@@ -115,7 +115,7 @@ function StraightBridge.Build(
 	local bridgeType = BridgeTypes[selectedTypeName]
 	
 	-- Player-scale constants
-	local bridgeWidth = width * 0.85  -- Use 85% of segment width
+	local bridgeWidth = width * 0.5  -- Use 50% of segment width (more narrow)
 	local bridgeThickness = 2  -- Player-scale thickness
 	
 	-- Helper function for world positioning

@@ -18,6 +18,11 @@ function PurpleObstacleGenerator.Generate(rng: Random, pathElements: {any}, conf
 	local color = config.Color
 	
 	for _, pathDot in pathElements do
+		-- Skip checkpoint positions to avoid creating gaps
+		if pathDot.Type == "CheckpointOrb" or pathDot.Type == "CheckpointStart" or pathDot.Type == "CheckpointEnd" then
+			continue
+		end
+		
 		if rng:NextNumber() < frequency then
 			-- Random dynamic behavior type
 			local behaviors = {"Moving", "Rotating", "Patrolling"}

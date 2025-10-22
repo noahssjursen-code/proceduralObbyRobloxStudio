@@ -19,6 +19,11 @@ function PinkObstacleGenerator.GenerateSmall(rng: Random, pathElements: {any}, c
 	local color = config.Color
 	
 	for _, pathDot in pathElements do
+		-- Skip checkpoint positions to avoid creating gaps
+		if pathDot.Type == "CheckpointOrb" or pathDot.Type == "CheckpointStart" or pathDot.Type == "CheckpointEnd" then
+			continue
+		end
+		
 		if rng:NextNumber() < frequency then
 			table.insert(elements, {
 				Type = "PinkObstacleSmall",
@@ -49,6 +54,11 @@ function PinkObstacleGenerator.GenerateLarge(rng: Random, pathElements: {any}, c
 	local color = config.Color
 	
 	for _, pathDot in pathElements do
+		-- Skip checkpoint positions to avoid creating gaps
+		if pathDot.Type == "CheckpointOrb" or pathDot.Type == "CheckpointStart" or pathDot.Type == "CheckpointEnd" then
+			continue
+		end
+		
 		if rng:NextNumber() < frequency then
 			table.insert(elements, {
 				Type = "PinkObstacleLarge",

@@ -11,6 +11,8 @@ type AttributeSpawnEntry = AttributeTypes.AttributeSpawnEntry
 
 -- Import all attributes
 local SpinningBlades = require(script.Parent.SpinningBlades)
+local WallPushers = require(script.Parent.WallPushers)
+local LaserGrid = require(script.Parent.LaserGrid)
 
 local AttributeRegistry = {}
 
@@ -23,6 +25,16 @@ local ATTRIBUTE_POOL: {AttributeSpawnEntry} = {
 		Attribute = SpinningBlades,
 		SpawnWeight = 100,
 		SpawnChance = 0.4,  -- 40% chance to spawn in a slot
+	},
+	{
+		Attribute = WallPushers,
+		SpawnWeight = 100,
+		SpawnChance = 0.35,  -- 35% chance to spawn in a slot
+	},
+	{
+		Attribute = LaserGrid,
+		SpawnWeight = 100,
+		SpawnChance = 0.3,  -- 30% chance to spawn in a slot
 	},
 	
 	-- Add more attributes here as you create them:

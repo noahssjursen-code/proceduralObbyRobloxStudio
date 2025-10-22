@@ -356,6 +356,14 @@ local SpawnerRegistry = {
 		return Spawners.SpawnCheckpointOrb(element)
 	end,
 	
+	["CheckpointStart"] = function(element)
+		return Spawners.SpawnDot(element, "CheckpointStart")
+	end,
+	
+	["CheckpointEnd"] = function(element)
+		return Spawners.SpawnDot(element, "CheckpointEnd")
+	end,
+	
 	["BlueNode"] = function(element)
 		return Spawners.SpawnDot(element, "BlueNode")
 	end,
