@@ -7,14 +7,23 @@
 local FillerTypes = require(script.Parent.FillerTypes)
 type FillerDefinition = FillerTypes.FillerDefinition
 
--- Import fittings (uncomment as you add them)
--- local MyFitting = require(script.Parent.Fittings.MyFitting)
+-- Import fittings
+local ScatteredPlatforms = require(script.Parent.Fittings.ScatteredPlatforms)
 
 local WideSegmentFillers = {}
 
+WideSegmentFillers.ScatteredPlatforms = {
+	ID = ScatteredPlatforms.ID .. "_Wide",
+	DisplayName = ScatteredPlatforms.DisplayName,
+	CompatibleSegmentTypes = {"Wide"},
+	SpawnWeight = 100,
+	Fitting = ScatteredPlatforms,
+	BuilderFunction = ScatteredPlatforms.Build,
+}
+
 function WideSegmentFillers.GetAll(): {FillerDefinition}
 	return {
-		-- Add your fillers here
+		WideSegmentFillers.ScatteredPlatforms,
 	}
 end
 

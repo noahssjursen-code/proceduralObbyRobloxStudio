@@ -8,8 +8,8 @@
 local FillerTypes = require(script.Parent.FillerTypes)
 type FillerDefinition = FillerTypes.FillerDefinition
 
--- Import fittings from repository (uncomment as you add them)
--- local MyFitting = require(script.Parent.Fittings.MyFitting)
+-- Import fittings from repository
+local StraightBridge = require(script.Parent.Fittings.StraightBridge)
 
 local ShortSegmentFillers = {}
 
@@ -17,14 +17,14 @@ local ShortSegmentFillers = {}
 -- FILLER DEFINITIONS (Link fittings here)
 --━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
--- Example:
--- ShortSegmentFillers.MyFitting = {
---     ID = MyFitting.ID .. "_Short",
---     DisplayName = MyFitting.DisplayName,
---     CompatibleSegmentTypes = {"Short"},
---     SpawnWeight = 50,
---     BuilderFunction = MyFitting.Build,
--- }
+ShortSegmentFillers.StraightBridge = {
+	ID = StraightBridge.ID .. "_Short",
+	DisplayName = StraightBridge.DisplayName,
+	CompatibleSegmentTypes = {"Short"},
+	SpawnWeight = 100,
+	Fitting = StraightBridge,
+	BuilderFunction = StraightBridge.Build,
+}
 
 --━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 -- REGISTRY
@@ -32,7 +32,7 @@ local ShortSegmentFillers = {}
 
 function ShortSegmentFillers.GetAll(): {FillerDefinition}
 	return {
-		-- Add your fillers here
+		ShortSegmentFillers.StraightBridge,
 	}
 end
 

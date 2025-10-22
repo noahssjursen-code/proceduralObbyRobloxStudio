@@ -8,22 +8,33 @@ local FillerTypes = require(script.Parent.FillerTypes)
 type FillerDefinition = FillerTypes.FillerDefinition
 
 -- Import fittings
-local LavaJump = require(script.Parent.Fittings.LavaJump)
+local MovingPlatforms = require(script.Parent.Fittings.MovingPlatforms)
+local StraightBridge = require(script.Parent.Fittings.StraightBridge)
 
 local LongSegmentFillers = {}
 
-LongSegmentFillers.LavaJump = {
-	ID = LavaJump.ID .. "_Long",
-	DisplayName = LavaJump.DisplayName,
+LongSegmentFillers.MovingPlatforms = {
+	ID = MovingPlatforms.ID .. "_Long",
+	DisplayName = MovingPlatforms.DisplayName,
 	CompatibleSegmentTypes = {"Long"},
-	SpawnWeight = 100,
-	Fitting = LavaJump, -- Reference to fitting module for metadata
-	BuilderFunction = LavaJump.Build,
+	SpawnWeight = 50,
+	Fitting = MovingPlatforms,
+	BuilderFunction = MovingPlatforms.Build,
+}
+
+LongSegmentFillers.StraightBridge = {
+	ID = StraightBridge.ID .. "_Long",
+	DisplayName = StraightBridge.DisplayName,
+	CompatibleSegmentTypes = {"Long"},
+	SpawnWeight = 50,
+	Fitting = StraightBridge,
+	BuilderFunction = StraightBridge.Build,
 }
 
 function LongSegmentFillers.GetAll(): {FillerDefinition}
 	return {
-		LongSegmentFillers.LavaJump,
+		LongSegmentFillers.MovingPlatforms,
+		LongSegmentFillers.StraightBridge,
 	}
 end
 

@@ -17,6 +17,7 @@ local MediumSegmentFillers = require(ReplicatedStorage.Shared.Definitions.Filler
 local LongSegmentFillers = require(ReplicatedStorage.Shared.Definitions.Fillers.LongSegmentFillers)
 local WideSegmentFillers = require(ReplicatedStorage.Shared.Definitions.Fillers.WideSegmentFillers)
 local NarrowSegmentFillers = require(ReplicatedStorage.Shared.Definitions.Fillers.NarrowSegmentFillers)
+local ConnectorBuilder = require(ReplicatedStorage.Shared.Services.WorldGeneration.Generators.ConnectorBuilder)
 local Config = require(ReplicatedStorage.Shared.Config)
 
 local WorldGenerationServer = {}
@@ -92,6 +93,14 @@ end
 
 -- Spawn a simple dot (generic for paths, walls, obstacles, decorations)
 function Spawners.SpawnDot(element: WorldGenerationService.WorldElement, dotType: string)
+	-- Skip segment markers if disabled in config
+	if dotType == "SegmentMarker" then
+		local scaledConfig = Config.GetScaledWorldConfig()
+		if not scaledConfig.ShowSegmentMarkers then
+			return nil
+		end
+	end
+	
 	local dot = Instance.new("Part")
 	dot.Name = dotType
 	dot.Shape = Enum.PartType.Ball
@@ -252,27 +261,32 @@ end
 
 -- Spawn a path segment (transparent bounding box) with filler content
 function Spawners.SpawnPathSegment(element: WorldGenerationService.WorldElement)
-	-- Create segment bounding box
-	local segment = Instance.new("Part")
-	segment.Name = "PathSegment_" .. (element.Properties.SegmentType or "Unknown") .. "_" .. (element.Properties.SegmentIndex or 0)
-	segment.Size = element.Scale -- Width x Height x Length
-	segment.Position = element.Position
-	segment.Anchored = true
-	segment.Material = element.Properties.Material or Enum.Material.ForceField
-	segment.Color = element.Properties.Color or Color3.fromRGB(150, 150, 255)
-	segment.Transparency = element.Properties.Transparency or 0.3
-	segment.CanCollide = false -- Segments are just bounding boxes, not walkable
+	local scaledConfig = Config.GetScaledWorldConfig()
 	
-	-- Apply rotation if specified
-	if element.Rotation then
-		segment.CFrame = CFrame.new(element.Position) * CFrame.Angles(
-			math.rad(element.Rotation.X),
-			math.rad(element.Rotation.Y),
-			math.rad(element.Rotation.Z)
-		)
+	-- Create segment bounding box (only if ShowSegmentBoxes is enabled)
+	local segment = nil
+	if scaledConfig.ShowSegmentBoxes then
+		segment = Instance.new("Part")
+		segment.Name = "PathSegment_" .. (element.Properties.SegmentType or "Unknown") .. "_" .. (element.Properties.SegmentIndex or 0)
+		segment.Size = element.Scale -- Width x Height x Length
+		segment.Position = element.Position
+		segment.Anchored = true
+		segment.Material = element.Properties.Material or Enum.Material.ForceField
+		segment.Color = element.Properties.Color or Color3.fromRGB(150, 150, 255)
+		segment.Transparency = scaledConfig.SegmentBoxTransparency or 0.7
+		segment.CanCollide = false -- Segments are just bounding boxes, not walkable
+		
+		-- Apply rotation if specified
+		if element.Rotation then
+			segment.CFrame = CFrame.new(element.Position) * CFrame.Angles(
+				math.rad(element.Rotation.X),
+				math.rad(element.Rotation.Y),
+				math.rad(element.Rotation.Z)
+			)
+		end
+		
+		segment.Parent = WorldContainer
 	end
-	
-	segment.Parent = WorldContainer
 	
 	-- Fill segment with content based on segment type
 	local segmentType = element.Properties.SegmentType
@@ -314,27 +328,20 @@ end
 
 -- Spawn a segment connector (gap filler between segments)
 function Spawners.SpawnSegmentConnector(element: WorldGenerationService.WorldElement)
-	local connector = Instance.new("Part")
-	connector.Name = "Connector_" .. (element.Properties.ConnectorType or "Unknown") .. "_" .. (element.Properties.SegmentIndex or 0)
-	connector.Size = element.Scale
-	connector.Position = element.Position
-	connector.Anchored = true
-	connector.Material = element.Properties.Material or Enum.Material.Neon
-	connector.Color = element.Properties.Color or Color3.fromRGB(200, 0, 255)
-	connector.Transparency = element.Properties.Transparency or 0.5
-	connector.CanCollide = false -- Connectors are visual guides
+	local startPos = element.Properties.StartPosition
+	local endPos = element.Properties.EndPosition
 	
-	-- Apply rotation if specified
-	if element.Rotation then
-		connector.CFrame = CFrame.new(element.Position) * CFrame.Angles(
-			math.rad(element.Rotation.X),
-			math.rad(element.Rotation.Y),
-			math.rad(element.Rotation.Z)
-		)
+	-- Only spawn ladder if height difference is significant (already filtered in PathGenerator)
+	if startPos and endPos then
+		local ladderWidth = 6  -- Player-scale comfortable ladder width
+		local connectorModel = ConnectorBuilder.BuildLadder(startPos, endPos, ladderWidth)
+		connectorModel.Name = "Connector_Ladder_" .. (element.Properties.SegmentIndex or 0)
+		connectorModel.Parent = WorldContainer
+		return connectorModel
+	else
+		-- Positions missing, skip
+		return nil
 	end
-	
-	connector.Parent = WorldContainer
-	return connector
 end
 
 --[[

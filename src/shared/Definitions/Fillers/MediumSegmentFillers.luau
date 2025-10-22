@@ -9,6 +9,7 @@ type FillerDefinition = FillerTypes.FillerDefinition
 
 -- Import fittings
 local LavaJump = require(script.Parent.Fittings.LavaJump)
+local StraightBridge = require(script.Parent.Fittings.StraightBridge)
 
 local MediumSegmentFillers = {}
 
@@ -20,14 +21,24 @@ MediumSegmentFillers.LavaJump = {
 	ID = LavaJump.ID .. "_Medium",
 	DisplayName = LavaJump.DisplayName,
 	CompatibleSegmentTypes = {"Medium"},
-	SpawnWeight = 100,
+	SpawnWeight = 50,
 	Fitting = LavaJump, -- Reference to fitting module for metadata
 	BuilderFunction = LavaJump.Build,
+}
+
+MediumSegmentFillers.StraightBridge = {
+	ID = StraightBridge.ID .. "_Medium",
+	DisplayName = StraightBridge.DisplayName,
+	CompatibleSegmentTypes = {"Medium"},
+	SpawnWeight = 50,
+	Fitting = StraightBridge,
+	BuilderFunction = StraightBridge.Build,
 }
 
 function MediumSegmentFillers.GetAll(): {FillerDefinition}
 	return {
 		MediumSegmentFillers.LavaJump,
+		MediumSegmentFillers.StraightBridge,
 	}
 end
 

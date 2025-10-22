@@ -9,6 +9,7 @@ local FillerTypes = require(script.Parent.FillerTypes)
 type FillerDefinition = FillerTypes.FillerDefinition
 
 local AttributeBuilder = require(script.Parent.Attributes.AttributeBuilder)
+local AttributeRegistry = require(script.Parent.Attributes.AttributeRegistry)
 local Config = require(script.Parent.Parent.Parent.Config)
 
 local FillerBuilder = {}
@@ -65,18 +66,79 @@ function FillerBuilder.Build(
 			slotConfig.SlotMargin
 		)
 		
-		-- Create visual debug boxes if enabled
-		if slotConfig.ShowSlotBoxes then
-			AttributeBuilder.CreateVisualSlotBoxes(
-				slots,
-				instance,
-				slotConfig.SlotBoxTransparency,
-				slotConfig.SlotBoxColor
-			)
+		-- Populate slots with attributes first (so we know which slots are filled)
+		local compatibleAttributes = AttributeRegistry.GetCompatibleAttributes(fitting.ID)
+		local filledSlots = {} -- Track which slots have attributes
+		
+		if #compatibleAttributes > 0 then
+			for slotIndex, slot in slots do
+				-- Randomly decide if this slot gets an attribute
+				-- Use weighted selection based on all compatible attributes
+				local selectedEntry = nil
+				local totalWeight = 0
+				
+				for _, entry in compatibleAttributes do
+					totalWeight += entry.SpawnWeight
+				end
+				
+				if totalWeight > 0 then
+					-- Roll to see if we spawn an attribute at all
+					local spawnRoll = rng:NextNumber(0, 1)
+					local maxSpawnChance = 0
+					
+					-- Find highest spawn chance among compatible attributes
+					for _, entry in compatibleAttributes do
+						if entry.SpawnChance > maxSpawnChance then
+							maxSpawnChance = entry.SpawnChance
+						end
+					end
+					
+					-- If we pass the spawn chance check, select an attribute
+					if spawnRoll <= maxSpawnChance then
+						-- Weighted random selection
+						local roll = rng:NextNumber(0, totalWeight)
+						local cumulative = 0
+						
+						for _, entry in compatibleAttributes do
+							cumulative += entry.SpawnWeight
+							if roll <= cumulative then
+								selectedEntry = entry
+								break
+							end
+						end
+					end
+				end
+				
+				-- Build the attribute if one was selected
+				if selectedEntry then
+					local attributeModel = selectedEntry.Attribute.BuildInSlot(
+						slot.Position,
+						slot.Scale,
+						slot.Rotation,
+						worldScale,
+						rng
+					)
+					
+					attributeModel.Parent = instance
+					filledSlots[slotIndex] = true -- Mark this slot as filled
+				end
+			end
 		end
 		
-		-- TODO: Populate slots with actual attributes (future step)
-		-- For now, we're just visualizing the slot system
+		-- Create visual debug boxes ONLY for empty slots
+		if slotConfig.ShowSlotBoxes then
+			for slotIndex, slot in slots do
+				if not filledSlots[slotIndex] then
+					-- Only show box if slot is empty
+					AttributeBuilder.CreateVisualSlotBoxes(
+						{slot}, -- Pass single slot as array
+						instance,
+						slotConfig.SlotBoxTransparency,
+						slotConfig.SlotBoxColor
+					)
+				end
+			end
+		end
 	end
 	
 	-- Parent last for performance

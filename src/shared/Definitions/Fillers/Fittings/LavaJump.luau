@@ -1,8 +1,11 @@
 --[[
 	Lava Jump Fitting
 	
-	A red death floor with circular platforms scattered on top.
-	Player must jump between safe platforms to avoid touching the lava.
+	A dangerous lava floor with elevated platforms rising from pedestals.
+	Glowing hot lava with safe stone platforms for the player to hop across.
+	
+	Difficulty: Easy-Medium
+	Best for: Medium, Short segments
 ]]
 
 local LavaJump = {}
@@ -11,8 +14,8 @@ LavaJump.ID = "LavaJump"
 LavaJump.DisplayName = "Lava Jump"
 
 -- Slot configuration for attributes
-LavaJump.AllowAttributes = true  -- Can have attributes added on top
-LavaJump.SlotCount = nil  -- Use default from Config (4 for Medium, 6 for Long)
+LavaJump.AllowAttributes = true
+LavaJump.SlotCount = nil
 
 function LavaJump.Build(
 	segmentPosition: Vector3,
@@ -28,71 +31,128 @@ function LavaJump.Build(
 	local length = segmentScale.Z
 	local yaw = math.rad(segmentRotation.Y)
 	
-	-- Create red death floor (lava)
-	local lavaFloor = Instance.new("Part")
-	lavaFloor.Name = "Lava"
-	lavaFloor.Size = Vector3.new(width * 0.95, 2, length * 0.95)
-	lavaFloor.Material = Enum.Material.SmoothPlastic
-	lavaFloor.Color = Color3.fromRGB(220, 50, 50) -- Bright red
-	lavaFloor.Anchored = true
-	lavaFloor.CanCollide = true
+	-- Player-scale constants
+	local platformRadius = 3  -- Platform size (player-scale)
+	local platformHeight = 4  -- Height above lava surface (player-scale)
+	local lavaDepth = 4  -- Depth of lava (player-scale)
 	
-	-- Position and rotate the floor
-	lavaFloor.CFrame = CFrame.new(segmentPosition) * CFrame.Angles(0, yaw, 0)
+	-- Helper function for world positioning
+	local function getWorldPosition(lateralOffset: number, verticalOffset: number, forwardOffset: number): CFrame
+		local localOffset = CFrame.Angles(0, yaw, 0) * Vector3.new(lateralOffset, verticalOffset, forwardOffset)
+		return CFrame.new(segmentPosition + localOffset) * CFrame.Angles(0, yaw, 0)
+	end
 	
-	-- Add a killing script (using attributes for now)
-	lavaFloor:SetAttribute("Deadly", true)
-	lavaFloor:SetAttribute("DamageType", "Lava")
+	-- Create layered lava floor for depth
+	-- Base layer (dark)
+	local lavaBase = Instance.new("Part")
+	lavaBase.Name = "LavaBase"
+	lavaBase.Size = Vector3.new(width * 0.95, lavaDepth, length * 0.95)
+	lavaBase.Material = Enum.Material.Cobblestone
+	lavaBase.Color = Color3.fromRGB(80, 20, 20)  -- Dark red/brown
+	lavaBase.Anchored = true
+	lavaBase.CanCollide = true
+	lavaBase.CFrame = getWorldPosition(0, -lavaDepth / 2, 0)
+	lavaBase:SetAttribute("Deadly", true)
+	lavaBase:SetAttribute("DamageType", "Lava")
+	lavaBase.Parent = model
 	
-	lavaFloor.Parent = model
+	-- Surface layer (glowing)
+	local lavaSurface = Instance.new("Part")
+	lavaSurface.Name = "LavaSurface"
+	lavaSurface.Size = Vector3.new(width * 0.93, 0.5, length * 0.93)
+	lavaSurface.Material = Enum.Material.Neon
+	lavaSurface.Color = Color3.fromRGB(255, 100, 50)  -- Bright orange-red
+	lavaSurface.Anchored = true
+	lavaSurface.CanCollide = false  -- Don't need collision, base has it
+	lavaSurface.CFrame = getWorldPosition(0, 0.25, 0)
+	lavaSurface.Parent = model
 	
-	-- Create circular safe platforms on top - forming a jumpable path
-	-- These values are in PLAYER scale - don't multiply by worldScale!
-	-- The segment is already scaled, these are gameplay constants
-	local platformRadius = 2.5 -- Consistent platform size (player-scale)
-	local platformHeight = 3 -- Height above lava (player-scale)
+	-- Add point light for glow effect
+	local lavaLight = Instance.new("PointLight")
+	lavaLight.Brightness = 2
+	lavaLight.Color = Color3.fromRGB(255, 100, 50)
+	lavaLight.Range = 20
+	lavaLight.Parent = lavaSurface
 	
-	-- Helper function to create a platform
-	local function createPlatform(name: string, forwardOffset: number, lateralOffset: number)
+	-- Helper function to create a platform with pedestal
+	local function createPlatform(name: string, forwardOffset: number, lateralOffset: number, heightVariation: number?)
+		heightVariation = heightVariation or 0
+		local actualHeight = platformHeight + heightVariation
+		
+		-- Create pedestal/pillar rising from lava
+		local pedestal = Instance.new("Part")
+		pedestal.Name = name .. "_Pedestal"
+		pedestal.Size = Vector3.new(platformRadius * 1.2, actualHeight + lavaDepth, platformRadius * 1.2)
+		pedestal.Material = Enum.Material.Cobblestone
+		pedestal.Color = Color3.fromRGB(70, 70, 70)  -- Dark gray stone
+		pedestal.Anchored = true
+		pedestal.CanCollide = false  -- Don't collide with sides
+		pedestal.CFrame = getWorldPosition(lateralOffset, -lavaDepth / 2 + actualHeight / 2, forwardOffset)
+		pedestal.Parent = model
+		
+		-- Create platform on top of pedestal
 		local platform = Instance.new("Part")
 		platform.Name = name
 		platform.Shape = Enum.PartType.Cylinder
-		platform.Size = Vector3.new(platformRadius * 2, platformRadius * 2, 2) -- Cylinder dimensions
-		platform.Material = Enum.Material.SmoothPlastic
-		platform.Color = Color3.fromRGB(200, 200, 200) -- Gray
+		platform.Size = Vector3.new(1.5, platformRadius * 2, platformRadius * 2)
+		platform.Material = Enum.Material.Slate
+		platform.Color = Color3.fromRGB(180, 180, 180)  -- Light gray stone
 		platform.Anchored = true
 		platform.CanCollide = true
 		
-		-- Calculate position in world space
-		local localOffset = CFrame.Angles(0, yaw, 0) * Vector3.new(lateralOffset, platformHeight, forwardOffset)
-		local platformPos = segmentPosition + localOffset
-		
-		-- Rotate cylinder to lay flat (cylinders point along their X axis by default)
-		platform.CFrame = CFrame.new(platformPos) * CFrame.Angles(0, yaw, 0) * CFrame.Angles(0, 0, math.rad(90))
-		
+		-- Position on top of pedestal, rotated to lay flat
+		platform.CFrame = getWorldPosition(lateralOffset, actualHeight, forwardOffset)
+			* CFrame.Angles(0, 0, math.rad(90))
 		platform.Parent = model
+		
+		-- Add accent ring
+		local ring = Instance.new("Part")
+		ring.Name = name .. "_Ring"
+		ring.Shape = Enum.PartType.Cylinder
+		ring.Size = Vector3.new(1.6, platformRadius * 2 + 0.4, platformRadius * 2 + 0.4)
+		ring.Material = Enum.Material.Metal
+		ring.Color = Color3.fromRGB(120, 120, 120)
+		ring.Anchored = true
+		ring.CanCollide = false
+		ring.Transparency = 0.3
+		ring.CFrame = platform.CFrame
+		ring.Parent = model
 	end
 	
-	-- ALWAYS create START platform (at segment entrance)
-	createPlatform("StartPlatform", -length * 0.45, 0)
+	-- Calculate platform layout
+	local jumpDistance = 6.5  -- Comfortable jump distance (player-scale)
+	local totalPlatforms = math.max(3, math.floor(length / jumpDistance))
 	
-	-- ALWAYS create END platform (at segment exit)
-	createPlatform("EndPlatform", length * 0.45, 0)
-	
-	-- Create middle platforms with zigzag pattern
-	local jumpDistance = 6 -- Maximum comfortable jump distance for player (player-scale)
-	local middlePlatformCount = math.max(math.floor(length / jumpDistance) - 1, 1) -- Subtract 2 for start/end
-	
-	for i = 1, middlePlatformCount do
-		-- Position evenly between start and end
-		local t = i / (middlePlatformCount + 1) -- 0 to 1, evenly spaced between start/end
-		local forwardOffset = (t - 0.5) * length * 0.9 -- Spread along 90% of length
+	-- Create platforms along the path
+	for i = 1, totalPlatforms do
+		-- Position evenly along segment
+		local t = (i - 1) / (totalPlatforms - 1)  -- 0 to 1
+		local forwardOffset = (t - 0.5) * length * 0.9
 		
-		-- Add controlled zigzag (not too random, forms a clear path)
-		local zigzag = math.sin(i * 1.2) -- Sine wave for smooth zigzag
-		local lateralOffset = zigzag * width * 0.15 -- 15% of width max deviation
+		-- Name based on position
+		local platformName
+		if i == 1 then
+			platformName = "StartPlatform"
+		elseif i == totalPlatforms then
+			platformName = "EndPlatform"
+		else
+			platformName = "Platform" .. i
+		end
 		
-		createPlatform("MiddlePlatform" .. i, forwardOffset, lateralOffset)
+		-- Add variety to middle platforms
+		local lateralOffset = 0
+		local heightVariation = 0
+		
+		if i > 1 and i < totalPlatforms then
+			-- Zigzag pattern for middle platforms
+			local zigzag = math.sin(i * 1.3)  -- Sine wave for smooth path
+			lateralOffset = zigzag * width * 0.18  -- Stay within bounds
+			
+			-- Random slight height variation for visual interest
+			heightVariation = rng:NextNumber(-0.5, 1.0)
+		end
+		
+		createPlatform(platformName, forwardOffset, lateralOffset, heightVariation)
 	end
 	
 	return model

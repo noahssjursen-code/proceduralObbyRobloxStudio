@@ -78,6 +78,8 @@ local function CreateConnector(
 			Color = color,
 			Transparency = 0.5,
 			HeightDiff = heightDiff,
+			StartPosition = startPos,  -- Store for building geometry
+			EndPosition = endPos,      -- Store for building geometry
 		}
 	}
 end
@@ -221,16 +223,21 @@ local function GenerateSegmentsBetween(
 			}
 		})
 		
-		-- Create connector from last segment end to this segment start
+		-- Create connector ONLY if there's a significant height difference
 		if lastSegmentEnd then
-			local connector = CreateConnector(
-				lastSegmentEnd,
-				startMarkerPos,
-				i,
-				pathIndex,
-				config
-			)
-			table.insert(elements, connector)
+			local heightDiff = math.abs(startMarkerPos.Y - lastSegmentEnd.Y)
+			local minHeightForConnector = 3  -- Only spawn ladder if gap is 3+ studs (player-scale)
+			
+			if heightDiff >= minHeightForConnector then
+				local connector = CreateConnector(
+					lastSegmentEnd,
+					startMarkerPos,
+					i,
+					pathIndex,
+					config
+				)
+				table.insert(elements, connector)
+			end
 		end
 		
 		-- Move to end of this segment

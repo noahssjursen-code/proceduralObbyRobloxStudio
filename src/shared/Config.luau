@@ -11,16 +11,16 @@ local Config = {}
 -- WORLD SCALE
 -- ========================================
 -- Master scale multiplier - change this to scale EVERYTHING
--- 10.0 = Player comfortable scale (baseline) ← CURRENT
+-- 8.0 = Player comfortable scale (baseline) ← CURRENT
 -- 5.0 = Half size (smaller, tighter gameplay)
--- 20.0 = 2x bigger (more spacious)
--- 30.0 = 3x bigger (truly colossal)
-Config.WorldScale = 10.0
+-- 10.0 = Slightly bigger (more spacious)
+-- 20.0 = 2.5x bigger (epic scale)
+Config.WorldScale = 8.0
 
 -- Player scale reference (WorldScale at which obstacles are built at 1:1 size)
--- At WorldScale=10, a 6-stud jump is comfortable for players
--- At WorldScale=30, everything is 3x bigger (epic scale)
-Config.PlayerScaleReference = 10
+-- At WorldScale=8, a 6-stud jump is comfortable for players
+-- At WorldScale=30, everything is 3.75x bigger (truly colossal)
+Config.PlayerScaleReference = 8
 
 -- ========================================
 -- PERFORMANCE
@@ -63,6 +63,11 @@ Config.WorldGeneration = {
 	SegmentTurnAngleMax = 60,
 	SegmentHeightVariation = 3, -- Height offset between segments
 	
+	-- Segment Visual Debug
+	ShowSegmentBoxes = false,  -- Show transparent bounding boxes for segments
+	SegmentBoxTransparency = 0.7,  -- How transparent segment boxes are
+	ShowSegmentMarkers = false,  -- Show green/red start/end markers
+	
 	-- Connectors (between segments)
 	ConnectorMaxFlatHeight = 2, -- Below this = flat connector (purple)
 	ConnectorLadderHeight = 8, -- Above flat, below this = ladder (brown)
@@ -83,8 +88,8 @@ Config.WorldGeneration = {
 		
 		-- Visual debug
 		ShowSlotBoxes = true, -- Show transparent boxes for each slot
-		SlotBoxTransparency = 0.7, -- How transparent the slot boxes are
-		SlotBoxColor = Color3.fromRGB(255, 200, 0), -- Yellow/orange for visibility
+		SlotBoxTransparency = 1, -- How transparent the slot boxes are (higher = more transparent)
+		SlotBoxColor = Color3.fromRGB(200, 160, 0), -- Muted yellow/orange
 	},
 	
 	-- Walls
@@ -215,6 +220,11 @@ function Config.GetScaledWorldConfig(): {[string]: any}
 		SegmentTurnAngleMin = wg.SegmentTurnAngleMin,
 		SegmentTurnAngleMax = wg.SegmentTurnAngleMax,
 		SegmentHeightVariation = wg.SegmentHeightVariation * scale,
+		
+		-- Segment visual debug (don't scale these)
+		ShowSegmentBoxes = wg.ShowSegmentBoxes,
+		SegmentBoxTransparency = wg.SegmentBoxTransparency,
+		ShowSegmentMarkers = wg.ShowSegmentMarkers,
 		
 		ConnectorMaxFlatHeight = wg.ConnectorMaxFlatHeight * scale,
 		ConnectorLadderHeight = wg.ConnectorLadderHeight * scale,
