@@ -55,7 +55,6 @@ Config.WorldGeneration = {
 	PathSegments = {
 		Short = {Length = 10, Width = 8, Height = 2},
 		Medium = {Length = 20, Width = 8, Height = 2},
-		Long = {Length = 40, Width = 8, Height = 2},
 		Wide = {Length = 15, Width = 12, Height = 2},
 		Narrow = {Length = 12, Width = 5, Height = 2},
 	},
@@ -81,7 +80,6 @@ Config.WorldGeneration = {
 		DefaultSlotCounts = {
 			Short = 2,   -- Short segments have 2 attribute slots
 			Medium = 4,  -- Medium segments have 4 attribute slots
-			Long = 6,    -- Long segments have 6 attribute slots
 			Wide = 3,    -- Wide segments have 3 attribute slots
 			Narrow = 5,  -- Narrow segments have 5 attribute slots (more frequent, smaller)
 		},
@@ -200,11 +198,6 @@ function Config.GetScaledWorldConfig(): {[string]: any}
 				Length = wg.PathSegments.Medium.Length * scale,
 				Width = wg.PathSegments.Medium.Width * scale,
 				Height = wg.PathSegments.Medium.Height * scale,
-			},
-			Long = {
-				Length = wg.PathSegments.Long.Length * scale,
-				Width = wg.PathSegments.Long.Width * scale,
-				Height = wg.PathSegments.Long.Height * scale,
 			},
 			Wide = {
 				Length = wg.PathSegments.Wide.Length * scale,

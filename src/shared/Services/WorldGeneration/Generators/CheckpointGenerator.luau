@@ -72,36 +72,28 @@ function CheckpointGenerator.Generate(rng: Random, spawnPos: Vector3, config: an
 	local currentDirection = Vector3.new(0, 0, 1) -- Start pointing forward
 	local currentHeight = spawnPos.Y -- Track height progression
 	
+	-- STRAIGHT LINE: Calculate total distance and spacing
+	local totalDistance = (checkpointCount - 1) * ((minDistance + maxDistance) / 2) -- Average distance
+	local direction = currentDirection -- Keep pointing forward (no random spread)
+	
 	-- Generate remaining checkpoints (2 through checkpointCount)
 	for i = 2, checkpointCount do
-		-- Random distance
-		local distance = rng:NextNumber(minDistance, maxDistance)
+		-- STRAIGHT LINE: Even spacing along the line
+		local progress = (i - 1) / (checkpointCount - 1) -- 0 to 1
+		local distance = progress * totalDistance
 		
-		-- Add random spread to HORIZONTAL direction only (shotgun effect in X/Z)
-		local spreadX = math.rad(rng:NextNumber(-spreadAngle, spreadAngle))
-		-- No spreadY - we'll control vertical separately
+		-- Calculate next position (straight line, no random spread)
+		local horizontalMovement = direction * distance
 		
-		-- Rotate direction vector (only horizontal rotation)
-		local newDirection = CFrame.Angles(0, spreadX, 0) * currentDirection
+		-- FLAT: Keep all checkpoints at the same height as spawn
+		currentHeight = spawnPos.Y
 		
-		-- Calculate next position (horizontal only)
-		local horizontalMovement = newDirection * distance
-		
-		-- Progressive height increase (trending upward)
-		local heightIncreaseMin = config.HeightIncreaseMin or 5
-		local heightIncreaseMax = config.HeightIncreaseMax or 15
-		local heightIncrease = rng:NextNumber(heightIncreaseMin, heightIncreaseMax)
-		currentHeight = currentHeight + heightIncrease
-		
-		-- Update current position with horizontal movement + upward trend
+		-- Update current position (straight line)
 		currentPosition = Vector3.new(
-			currentPosition.X + horizontalMovement.X,
+			spawnPos.X + horizontalMovement.X,
 			currentHeight,
-			currentPosition.Z + horizontalMovement.Z
+			spawnPos.Z + horizontalMovement.Z
 		)
-		
-		-- Update direction for next iteration
-		currentDirection = newDirection
 		
 		-- Create start node (where paths connect TO this checkpoint)
 		table.insert(elements, {

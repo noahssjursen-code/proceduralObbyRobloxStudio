@@ -16,7 +16,6 @@ local PathGenerator = {}
 local SEGMENT_WEIGHTS = {
 	Short = 20,
 	Medium = 30,
-	Long = 15,
 	Wide = 10,
 	Narrow = 10,
 }
@@ -86,6 +85,7 @@ end
 
 --[[
 	Calculate total distance needed and pick segments to fill it
+	The last segment will be adjusted to perfectly reach the target distance
 ]]
 local function PickSegmentsForDistance(targetDistance: number, segmentTypes: any, rng: Random): {string}
 	local segments = {}
@@ -99,7 +99,7 @@ local function PickSegmentsForDistance(targetDistance: number, segmentTypes: any
 		end
 	end
 	
-	-- Keep adding segments until we reach target distance
+	-- Keep adding segments until we're close to target distance
 	local maxSegments = 50 -- Safety limit
 	local segmentCount = 0
 	
@@ -108,12 +108,11 @@ local function PickSegmentsForDistance(targetDistance: number, segmentTypes: any
 		local segmentType = weightedList[rng:NextInteger(1, #weightedList)]
 		local segmentLength = segmentTypes[segmentType].Length
 		
-		-- Check if adding this segment overshoots too much
+		-- Check if adding this segment would overshoot
 		local remaining = targetDistance - currentDistance
 		
-		-- Only stop if we're extremely close (less than 5% of target distance)
-		if remaining < targetDistance * 0.05 and #segments > 0 then
-			-- Extremely close, we're done
+		-- If this segment would overshoot by more than 20% of target distance, stop
+		if remaining < segmentLength and remaining < targetDistance * 0.2 and #segments > 0 then
 			break
 		end
 		
@@ -164,32 +163,24 @@ local function GenerateSegmentsBetween(
 	for i, segmentName in ipairs(segmentNames) do
 		local segmentDef = segmentTypes[segmentName]
 		
-		-- Steer toward target: Calculate direction to end checkpoint
+		-- STRAIGHT LINE: Calculate direction directly to end checkpoint
 		local toTarget = (endPos - currentPos)
 		local horizontalToTarget = Vector3.new(toTarget.X, 0, toTarget.Z)
 		local targetYaw = math.atan2(horizontalToTarget.X, horizontalToTarget.Z)
 		
-		-- Blend current yaw with target yaw (steering behavior)
-		-- Last few segments: lock onto target more strongly
-		local isNearEnd = i > (#segmentNames - 3)
-		local steeringStrength = if isNearEnd then 0.8 else 0.3
+		-- Use the target yaw directly (no steering, no random variation)
+		currentYaw = targetYaw
 		
-		-- Interpolate toward target yaw
-		local yawDiff = targetYaw - currentYaw
-		-- Normalize angle difference to -pi to pi
-		while yawDiff > math.pi do yawDiff = yawDiff - 2*math.pi end
-		while yawDiff < -math.pi do yawDiff = yawDiff + 2*math.pi end
-		
-		currentYaw = currentYaw + (yawDiff * steeringStrength)
-		
-		-- Add small random variation (less aggressive now that we're steering)
-		if not isNearEnd then
-			local turnVariation = math.rad(rng:NextNumber(-20, 20))
-			currentYaw = currentYaw + turnVariation
+		-- Calculate actual segment length (adjust last segment to reach target exactly)
+		local segmentLength = segmentDef.Length
+		if i == #segmentNames then
+			-- Last segment: adjust length to reach the target checkpoint exactly
+			local remainingDistance = (endPos - currentPos).Magnitude
+			segmentLength = remainingDistance
 		end
 		
 		-- Calculate segment center position (move forward by half length)
-		local halfLength = segmentDef.Length / 2
+		local halfLength = segmentLength / 2
 		local forwardOffset = CFrame.Angles(0, currentYaw, 0) * Vector3.new(0, 0, halfLength)
 		local segmentCenter = currentPos + forwardOffset + Vector3.new(0, currentHeight - startPos.Y, 0)
 		
@@ -199,25 +190,11 @@ local function GenerateSegmentsBetween(
 			segmentCenter = startPos + Vector3.new(0, currentHeight - startPos.Y, 0) + forwardOffset
 		end
 		
-		-- For the last segment, ensure it ends exactly at the target checkpoint
-		if i == #segmentNames then
-			-- Calculate how much we need to adjust to reach the end checkpoint
-			local remainingDistance = (endPos - currentPos).Magnitude
-			local segmentLength = segmentDef.Length
-			
-			-- If we're close but not exact, adjust the segment position
-			if remainingDistance > 0.1 and remainingDistance < segmentLength then
-				-- Adjust the segment center to make it end at the target
-				local adjustment = (endPos - currentPos) * 0.5  -- Half the remaining distance
-				segmentCenter = segmentCenter + adjustment
-			end
-		end
-		
 		-- Create segment element (transparent bounding box)
 		table.insert(elements, {
 			Type = "PathSegment",
 			Position = segmentCenter,
-			Scale = Vector3.new(segmentDef.Width, segmentDef.Height, segmentDef.Length),
+			Scale = Vector3.new(segmentDef.Width, segmentDef.Height, segmentLength), -- Use adjusted length
 			Rotation = Vector3.new(0, math.deg(currentYaw), 0),
 			Properties = {
 				SegmentType = segmentName,
@@ -244,31 +221,16 @@ local function GenerateSegmentsBetween(
 			}
 		})
 		
-		-- Create connector ONLY if there's a significant height difference
-		if lastSegmentEnd then
-			local heightDiff = math.abs(startMarkerPos.Y - lastSegmentEnd.Y)
-			local minHeightForConnector = 3  -- Only spawn ladder if gap is 3+ studs (player-scale)
-			
-			if heightDiff >= minHeightForConnector then
-				local connector = CreateConnector(
-					lastSegmentEnd,
-					startMarkerPos,
-					i,
-					pathIndex,
-					config
-				)
-				table.insert(elements, connector)
-			end
-		end
+		-- FLAT: No connectors needed since all segments are at the same height
+		-- (Connectors were only for height differences)
 		
 		-- Move to end of this segment
-		local fullForwardOffset = CFrame.Angles(0, currentYaw, 0) * Vector3.new(0, 0, segmentDef.Length)
+		local fullForwardOffset = CFrame.Angles(0, currentYaw, 0) * Vector3.new(0, 0, segmentLength)
 		currentPos = currentPos + fullForwardOffset
 		
 		-- For the last segment, ensure it ends exactly at the target checkpoint
 		if i == #segmentNames then
 			-- Adjust currentPos to align with end checkpoint
-			local toEnd = (endPos - currentPos)
 			currentPos = endPos
 		end
 		
@@ -290,13 +252,8 @@ local function GenerateSegmentsBetween(
 		-- Store for next connector
 		lastSegmentEnd = endMarkerPos
 		
-		-- Add height variation (steer toward target height too)
-		if i < #segmentNames then
-			local targetHeightDiff = endPos.Y - currentHeight
-			local heightSteering = targetHeightDiff * 0.2 -- Gradual approach to target height
-			local heightVariation = rng:NextNumber(-config.SegmentHeightVariation, config.SegmentHeightVariation)
-			currentHeight = currentHeight + heightSteering + heightVariation
-		end
+		-- FLAT: Keep all segments at the same height as start checkpoint
+		-- No height changes between segments
 	end
 	
 	return elements
