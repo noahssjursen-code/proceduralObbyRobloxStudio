@@ -311,5 +311,5 @@ Open `RobloxProceduralObby.rbxlx` in Roblox Studio and connect to Rojo.
 **Current Status**: 🚧 Phase 1 - Foundation
 **Version**: 0.1.0
 **Next Up**: Seed system + basic world generation
-#   p r o c e d u r a l O b b y R o b l o x S t u d i o  
+ 
  
